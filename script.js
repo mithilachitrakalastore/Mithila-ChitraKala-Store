@@ -547,17 +547,130 @@ async function handleCheckoutSubmit(e) {
         }
       }
 
-      function fallbackShare(url) {
-        if (navigator.clipboard) {
-          navigator.clipboard.writeText(url).then(() => {
-            alert('Product link copied to clipboard: ' + url);
-          }).catch(() => {
-            alert('Share this product: ' + url);
-          });
-        } else {
-          alert('Share this product: ' + url);
-        }
-      }
+            function fallbackShare(url) {
+                // Create a small mobile-friendly modal (bottom sheet style) to show share options
+                // If clipboard is available, enable copy; always provide WhatsApp and Close options.
+                const existing = document.getElementById('mc-share-modal');
+                if (existing) return; // already open
+
+                const overlay = document.createElement('div');
+                overlay.id = 'mc-share-modal';
+                overlay.style.position = 'fixed';
+                overlay.style.left = '0';
+                overlay.style.right = '0';
+                overlay.style.top = '0';
+                overlay.style.bottom = '0';
+                overlay.style.display = 'flex';
+                overlay.style.justifyContent = 'center';
+                overlay.style.alignItems = 'flex-end';
+                overlay.style.background = 'rgba(0,0,0,0.35)';
+                overlay.style.zIndex = '12000';
+
+                const sheet = document.createElement('div');
+                sheet.style.width = '100%';
+                sheet.style.maxWidth = '600px';
+                sheet.style.borderTopLeftRadius = '12px';
+                sheet.style.borderTopRightRadius = '12px';
+                sheet.style.background = '#fff';
+                sheet.style.padding = '14px';
+                sheet.style.boxShadow = '0 -8px 30px rgba(0,0,0,0.2)';
+                sheet.style.fontFamily = 'inherit';
+
+                const title = document.createElement('div');
+                title.textContent = 'Share product';
+                title.style.fontWeight = '700';
+                title.style.marginBottom = '8px';
+
+                const urlBox = document.createElement('input');
+                urlBox.type = 'text';
+                urlBox.value = url;
+                urlBox.readOnly = true;
+                urlBox.style.width = '100%';
+                urlBox.style.padding = '10px';
+                urlBox.style.border = '1px solid #e5e7eb';
+                urlBox.style.borderRadius = '8px';
+                urlBox.style.marginBottom = '10px';
+
+                const actions = document.createElement('div');
+                actions.style.display = 'flex';
+                actions.style.gap = '8px';
+
+                const copyBtn = document.createElement('button');
+                copyBtn.textContent = 'Copy link';
+                copyBtn.style.flex = '1';
+                copyBtn.style.padding = '10px';
+                copyBtn.style.border = 'none';
+                copyBtn.style.borderRadius = '8px';
+                copyBtn.style.background = 'linear-gradient(90deg,#ef4444,#fb923c)';
+                copyBtn.style.color = 'white';
+                copyBtn.style.fontWeight = '600';
+
+                const waBtn = document.createElement('button');
+                waBtn.textContent = 'WhatsApp';
+                waBtn.style.flex = '1';
+                waBtn.style.padding = '10px';
+                waBtn.style.border = 'none';
+                waBtn.style.borderRadius = '8px';
+                waBtn.style.background = '#25D366';
+                waBtn.style.color = 'white';
+                waBtn.style.fontWeight = '600';
+
+                const closeBtn = document.createElement('button');
+                closeBtn.textContent = 'Close';
+                closeBtn.style.width = '100%';
+                closeBtn.style.marginTop = '10px';
+                closeBtn.style.padding = '10px';
+                closeBtn.style.border = '1px solid #e5e7eb';
+                closeBtn.style.borderRadius = '8px';
+                closeBtn.style.background = '#fff';
+                closeBtn.style.fontWeight = '600';
+
+                actions.appendChild(copyBtn);
+                actions.appendChild(waBtn);
+
+                sheet.appendChild(title);
+                sheet.appendChild(urlBox);
+                sheet.appendChild(actions);
+                sheet.appendChild(closeBtn);
+                overlay.appendChild(sheet);
+                document.body.appendChild(overlay);
+
+                // Event handlers
+                copyBtn.addEventListener('click', async () => {
+                    if (navigator.clipboard && navigator.clipboard.writeText) {
+                        try {
+                            await navigator.clipboard.writeText(url);
+                            copyBtn.textContent = 'Copied';
+                            setTimeout(() => copyBtn.textContent = 'Copy link', 2000);
+                        } catch (e) {
+                            // fallback to select + execCommand
+                            urlBox.select();
+                            document.execCommand('copy');
+                            copyBtn.textContent = 'Copied';
+                            setTimeout(() => copyBtn.textContent = 'Copy link', 2000);
+                        }
+                    } else {
+                        urlBox.select();
+                        document.execCommand('copy');
+                        copyBtn.textContent = 'Copied';
+                        setTimeout(() => copyBtn.textContent = 'Copy link', 2000);
+                    }
+                });
+
+                waBtn.addEventListener('click', () => {
+                    const waUrl = `https://wa.me/?text=${encodeURIComponent(url)}`;
+                    window.open(waUrl, '_blank');
+                });
+
+                function closeModal() {
+                    if (overlay && overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                }
+
+                closeBtn.addEventListener('click', closeModal);
+                overlay.addEventListener('click', (ev) => {
+                    if (ev.target === overlay) closeModal();
+                });
+            }
 
 // ---- Common ----
 function initializeCommonFeatures() {
@@ -1143,27 +1256,27 @@ async function loadPartnerStores() {
 }
 
 // block mouse right-click
-// document.addEventListener('contextmenu', e => e.preventDefault());
+ document.addEventListener('contextmenu', e => e.preventDefault());
 
-// // block common keyboard shortcuts (Ctrl/Cmd + U/S, Ctrl/Cmd+Shift+I/J/C, F12, Shift+F10, ContextMenu key)
-// document.addEventListener('keydown', function (e) {
-//     const k = (e.key || '').toLowerCase();
-//     const modifier = e.ctrlKey || e.metaKey; // include Cmd on macOS
+ // block common keyboard shortcuts (Ctrl/Cmd + U/S, Ctrl/Cmd+Shift+I/J/C, F12, Shift+F10, ContextMenu key)
+document.addEventListener('keydown', function (e) {
+    const k = (e.key || '').toLowerCase();
+    const modifier = e.ctrlKey || e.metaKey; // include Cmd on macOS
 
 //     // F12
-//     if (k === 'f12') { e.preventDefault(); return; }
+    if (k === 'f12') { e.preventDefault(); return; }
 
 //     // Shift+F10 (opens context menu)
-//     if (e.shiftKey && k === 'f10') { e.preventDefault(); return; }
+    if (e.shiftKey && k === 'f10') { e.preventDefault(); return; }
 
 //     // ContextMenu key (some keyboards) or legacy keyCode 93
-//     if (k === 'contextmenu' || e.keyCode === 93) { e.preventDefault(); return; }
+    if (k === 'contextmenu' || e.keyCode === 93) { e.preventDefault(); return; }
 
 //     // Ctrl/Cmd + U (view source), Ctrl/Cmd + S (save)
-//     if (modifier && (k === 'u' || k === 's')) { e.preventDefault(); return; }
+   if (modifier && (k === 'u' || k === 's')) { e.preventDefault(); return; }
 
 //     // Ctrl/Cmd + Shift + I/J/C (devtools / inspect / console / inspect element)
-//     if (modifier && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) { e.preventDefault(); return; }
-// });
+    if (modifier && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) { e.preventDefault(); return; }
+});
 
 // End of script.js
