@@ -521,7 +521,7 @@ async function handleCheckoutSubmit(e) {
                       `✅ Order ID: ${response.orderId}`;
 
         // Open WhatsApp with pre-filled message
-        const whatsappURL = `https://wa.me/9766115626?text=${encodeURIComponent(message)}`;
+        const whatsappURL = `https://wa.me/9818270104?text=${encodeURIComponent(message)}`;
         window.open(whatsappURL, "_blank");
 
         showSuccessMessage(`Order placed successfully! Order ID: ${response.orderId}`);
